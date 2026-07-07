@@ -3,7 +3,7 @@ const isGitHubPages = host.includes('github.io');
 const isLocalhost = host === 'localhost' || host === '127.0.0.1';
 
 const API_BASE = isGitHubPages
-  ? 'https://dublin-traffic-chatbot.<YOUR_CLOUDFLARE_SUBDOMAIN>.workers.dev'
+  ? 'https://dublin-traffic-chatbot.gsottana88.workers.dev'
   : isLocalhost
     ? 'http://localhost:8787'
     : '';
