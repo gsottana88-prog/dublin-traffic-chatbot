@@ -1,79 +1,84 @@
 # Dublin Traffic Advisor Chatbot
 
-AI-powered traffic advisor for Dublin, Ireland. Enter a start and finish address and get practical advice on driving conditions, public transport disruptions, and weather impact.
+AI-powered traffic advisor for Dublin. Enter start/finish addresses and get practical advice on driving conditions, public transport, and weather impact.
 
-Built with **DeepSeek V4 Flash**, **Open-Meteo**, **NTA GTFS-RT**, **Irish Rail MCP**, and **OpenStreetMap** routing.
+- **Frontend**: GitHub Pages
+- **Backend**: Cloudflare Worker
+- **AI**: DeepSeek V4 Flash
 
 ## Architecture
 
 ```
-Frontend (index.html + app.js)
-       ↕ POST /api/chat
-Vercel Serverless Functions
-  ├── /api/weather   → Open-Meteo (free, no key needed)
-  ├── /api/traffic   → NTA GTFS-RT (optional) + Irish Rail MCP (free)
-  ├── /api/route     → Nominatim + OSRM (free, no key needed)
-  └── /api/chat      → DeepSeek V4 Flash
+GitHub Pages (static frontend)          Cloudflare Worker (API)
+┌─────────────────────┐          ┌──────────────────────────────┐
+│ index.html           │  fetch() │  /api/weather → Open-Meteo   │
+│ style.css            │ ◄──────► │  /api/traffic → Irish Rail   │
+│ app.js               │          │                + NTA (opt.)  │
+└─────────────────────┘          │  /api/route   → OpenStreetMap │
+                                  │  /api/chat    → DeepSeek V4   │
+                                  └──────────────────────────────┘
 ```
 
 ## API Keys
 
 ### Required (one key)
-| Key | Cost | Sign Up |
-|---|---|---|
-| DeepSeek API Key | Free 5M tokens (new accounts), then ~$0.14/1M | [platform.deepseek.com](https://platform.deepseek.com) |
+- **DeepSeek API** — your key: `sk-0d310c99e519466e995436d8c8f568c7`
+  - 5M free tokens for new accounts, then ~$0.14/1M input tokens
 
-### No keys needed for these
-| Service | What it provides |
+### No keys needed
+- **Open-Meteo** — Dublin weather (free)
+- **OpenStreetMap** — geocoding + routing (free)
+- **Irish Rail MCP** — live DART/train positions (free)
+
+### Optional
+- **NTA API Key** — free signup at [developer.nationaltransport.ie](https://developer.nationaltransport.ie) for bus/Luas alerts
+
+## Deployment
+
+### 1. Cloudflare Worker (back-end)
+
+```bash
+npm install
+npx wrangler login
+npm run deploy      # deploys to <name>.<your-subdomain>.workers.dev
+```
+
+Then set your DeepSeek key:
+
+```bash
+npx wrangler secret put DEEPSEEK_API_KEY
+# Paste: sk-0d310c99e519466e995436d8c8f568c7
+```
+
+Optional — add NTA key:
+
+```bash
+npx wrangler secret put NTA_API_KEY
+```
+
+### 2. Connect app.js to your Worker
+
+Edit `app.js` and replace `<YOUR_CLOUDFLARE_SUBDOMAIN>` with your actual Cloudflare subdomain.
+
+### 3. Enable GitHub Pages (frontend)
+
+**Settings** → **Pages** → Deploy from `main`, folder `/ (root)`.
+
+## Files
+
+| File | Purpose |
 |---|---|
-| **Open-Meteo** | Dublin weather forecast (temperature, rain, wind, visibility) |
-| **OpenStreetMap (Nominatim)** | Address geocoding |
-| **OpenStreetMap (OSRM)** | Driving route calculation |
-| **Irish Rail MCP** | Live train positions and DART info |
-
-### Optional (for richer transport data)
-| Key | Cost | Sign Up |
-|---|---|---|
-| NTA Transport API Key | Free | [developer.nationaltransport.ie](https://developer.nationaltransport.ie) — adds real-time bus/ Luas alerts |
-
-## Setup
-
-### 1. Deploy to Vercel
-
-Push to GitHub → go to [vercel.com](https://vercel.com) → **Add New Project** → import `dublin-traffic-chatbot` → **Deploy**
-
-### 2. Set Environment Variables
-
-In Vercel project **Settings** → **Environment Variables**, add:
-
-| Name | Required | Value |
-|---|---|---|
-| `DEEPSEEK_API_KEY` | ✅ Yes | Your DeepSeek API key |
-| `NTA_API_KEY` | ❌ Optional | NTA key for bus/tram alerts |
-
-### 3. Redeploy
-
-After adding env vars, go to **Deployments** → click **Redeploy** on the latest deployment.
-
-### 4. Enable GitHub Pages
-
-**Settings** → **Pages** → Deploy from `main` branch, `/ (root)` folder.
-
-## Usage
-
-1. Open the app (Vercel URL or GitHub Pages)
-2. Enter a **Start Address** (e.g. "Temple Bar, Dublin")
-3. Enter a **Finish Address** (e.g. "Dun Laoghaire, Dublin")
-4. Click **Get Traffic Advice**
-5. The AI analyzes weather, transport, and route data to give you practical advice
+| `index.html` + `style.css` + `app.js` | Chatbot frontend (GitHub Pages) |
+| `src/index.js` | Cloudflare Worker (all API endpoints) |
+| `wrangler.toml` | Worker configuration |
+| `package.json` | Dependencies (wrangler) |
 
 ## Data Sources
 
-- **Open-Meteo** — Free weather forecasts (no API key required)
-- **NTA GTFS-RT** — Real-time transport alerts (optional, free key)
+- **Open-Meteo** — Free weather (no key)
 - **Irish Rail MCP** — Live train/DART positions (free, no key)
-- **OpenStreetMap** — Geocoding (Nominatim) and routing (OSRM)
+- **NTA GTFS-RT** — Bus/tram alerts (optional, free key)
+- **OpenStreetMap** — Geocoding (Nominatim) + routing (OSRM)
+- **DeepSeek V4 Flash** — AI traffic advice
 
-## License
-
-MIT
+## License MIT

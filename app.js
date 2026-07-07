@@ -1,7 +1,12 @@
-const isGitHubPages = window.location.hostname.includes('github.io');
+const host = window.location.hostname;
+const isGitHubPages = host.includes('github.io');
+const isLocalhost = host === 'localhost' || host === '127.0.0.1';
+
 const API_BASE = isGitHubPages
-  ? 'https://dublin-traffic-chatbot.vercel.app'
-  : '';
+  ? 'https://dublin-traffic-chatbot.<YOUR_CLOUDFLARE_SUBDOMAIN>.workers.dev'
+  : isLocalhost
+    ? 'http://localhost:8787'
+    : '';
 
 const elements = {
   start: document.getElementById('start'),

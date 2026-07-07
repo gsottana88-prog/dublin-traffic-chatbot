@@ -1,6 +1,14 @@
 {
   "name": "dublin-traffic-chatbot",
   "version": "1.0.0",
-  "description": "Dublin Traffic Advisor chatbot powered by DeepSeek V4 Flash",
-  "private": true
+  "description": "Dublin Traffic Advisor — Cloudflare Worker + GitHub Pages",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "login": "wrangler login"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
 }
