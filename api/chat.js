@@ -24,9 +24,13 @@ export default async function handler(req, res) {
     const advice = await callDeepSeek(prompt);
 
     const sourceParts = [];
-    if (weather.available) sourceParts.push('Weather: OpenWeatherMap');
-    if (traffic.available) sourceParts.push('Transport: NTA GTFS-RT');
+    if (weather.available) sourceParts.push('Weather: Open-Meteo');
+    if (traffic.available) {
+      if (traffic.nta_status === 'active') sourceParts.push('Transport: NTA GTFS-RT');
+      if (traffic.irish_rail_status === 'active') sourceParts.push('Irish Rail');
+    }
     if (route.available) sourceParts.push('Routing: OpenStreetMap');
+    if (traffic?.nta_status === 'not_configured') sourceParts.push('NTA key not set (free transport data limited)');
 
     return res.status(200).json({
       advice,
@@ -45,33 +49,45 @@ function buildPrompt(start, finish, weather, traffic, route) {
   if (weather.available) {
     w = `- Temperature: ${weather.temperature}°C (feels like ${weather.feels_like}°C)
 - Conditions: ${weather.conditions}
-- Wind: ${weather.wind_speed} m/s${weather.wind_gust ? ` (gusts ${weather.wind_gust} m/s)` : ''}
+- Wind: ${weather.wind_speed} km/h${weather.wind_gust ? ` (gusts ${weather.wind_gust} km/h)` : ''}
 - Humidity: ${weather.humidity}%
-- Rain (1h): ${weather.rain_1h} mm
+- Precipitation: ${weather.precipitation} mm
 - Visibility: ${weather.visibility} m`;
+    if (weather.upcoming_hours?.length) {
+      w += '\n- Next few hours:';
+      for (const h of weather.upcoming_hours.slice(0, 4)) {
+        w += `\n  ${h.time.slice(11, 16)}: ${h.conditions}, ${h.temp}°C, rain ${h.precip_prob}%`;
+      }
+    }
   } else {
-    w = '- Weather data currently unavailable';
+    w = '- Weather data unavailable';
   }
 
   let t = '';
   if (traffic.available) {
-    const high = traffic.alerts.filter(a => a.severity === 'high');
-    const med = traffic.alerts.filter(a => a.severity === 'medium');
-    const delays = traffic.trip_updates.filter(u => Math.abs(u.delay_seconds) > 60);
+    const ntaAlerts = traffic.alerts?.filter(a => a.source === 'NTA') || [];
+    const high = ntaAlerts.filter(a => a.severity === 'high');
+    const med = ntaAlerts.filter(a => a.severity === 'medium');
 
-    if (high.length) t += `\n⚠️ HIGH SEVERITY ALERTS:\n${high.map(a => `- ${a.header || a.description || a.effect}${a.route_ids.length ? ` (Routes: ${a.route_ids.join(', ')})` : ''}`).join('\n')}`;
-    if (med.length) t += `\n⚠️ MEDIUM SEVERITY ALERTS:\n${med.map(a => `- ${a.header || a.description || a.effect}${a.route_ids.length ? ` (Routes: ${a.route_ids.join(', ')})` : ''}`).join('\n')}`;
-    if (!high.length && !med.length) t += '\n- No significant service alerts';
-    if (delays.length) {
-      t += `\n\n⏱️ NOTABLE DELAYS (${delays.length} trips):`;
-      const grouped = {};
-      delays.forEach(d => { grouped[d.route_id] = (grouped[d.route_id] || 0) + 1; });
-      Object.entries(grouped).slice(0, 5).forEach(([route, count]) => {
-        t += `\n- Route ${route}: ${count} trip(s) affected`;
-      });
+    if (high.length) {
+      t += `\n⚠️ HIGH SEVERITY:\n${high.map(a => `- ${a.header || a.description || a.effect}${a.route_ids?.length ? ` (Routes: ${a.route_ids.join(', ')})` : ''}`).join('\n')}`;
+    }
+    if (med.length) {
+      t += `\n⚠️ MEDIUM SEVERITY:\n${med.map(a => `- ${a.header || a.description || a.effect}${a.route_ids?.length ? ` (Routes: ${a.route_ids.join(', ')})` : ''}`).join('\n')}`;
+    }
+
+    if (traffic.trains?.total) {
+      t += `\n\n🚆 Irish Rail: ${traffic.trains.total} active trains (${traffic.trains.dart} DART)`;
+      if (traffic.trains.stations?.length) {
+        t += `\nBusiest destinations: ${traffic.trains.stations.map(s => `${s.station} (${s.count})`).join(', ')}`;
+      }
+    }
+
+    if (!high.length && !med.length && !traffic.trains?.total) {
+      t += '\n- No transport alerts currently reported';
     }
   } else {
-    t = '\n- Real-time transport data unavailable';
+    t = '\n- Real-time transport data currently unavailable';
   }
 
   let r = '';
@@ -93,15 +109,15 @@ COMMUTE:
 CURRENT WEATHER IN DUBLIN:
 ${w}
 
-PUBLIC TRANSPORT STATUS:
+TRANSPORT STATUS:
 ${t}
 
 ROUTE INFO:
 ${r}
 
 Based on this data, provide advice covering:
-1. Whether weather affects driving conditions today
-2. Any public transport disruptions relevant to this route
+1. Whether weather affects driving conditions
+2. Any public transport disruptions
 3. Estimated travel time considering current conditions
 4. Best travel option (drive vs public transport)
 5. Any specific warnings or recommendations
@@ -111,7 +127,9 @@ Keep it concise (2-3 short paragraphs). Be practical and specific to Dublin.`;
 
 async function callDeepSeek(prompt) {
   const apiKey = process.env.DEEPSEEK_API_KEY;
-  if (!apiKey) return 'DeepSeek API key not configured. Please set the DEEPSEEK_API_KEY environment variable.';
+  if (!apiKey) {
+    return 'DeepSeek API key not configured. Add DEEPSEEK_API_KEY to your Vercel environment variables and redeploy.';
+  }
 
   const response = await fetch(DEEPSEEK_URL, {
     method: 'POST',
@@ -142,8 +160,7 @@ async function callDeepSeek(prompt) {
 function buildFallbackText(start, finish) {
   return `Route requested: "${start}" → "${finish}" in Dublin.
 
-To get full AI-powered advice, ensure the following API keys are configured:
-- DEEPSEEK_API_KEY (required for AI advice)
-- OPENWEATHER_API_KEY (for weather data)
-- NTA_API_KEY (for real-time transport alerts)`;
+Weather and routing data are available. To get AI-powered advice, add your DEEPSEEK_API_KEY to Vercel environment variables.
+
+For richer transport data, also add NTA_API_KEY (free signup at developer.nationaltransport.ie).`;
 }
