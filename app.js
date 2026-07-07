@@ -58,7 +58,10 @@ async function handleSubmit() {
     addMessage(data.advice || data.error || 'No advice returned.', '', 'bot', data.source);
   } catch (err) {
     hideTyping();
-    addMessage(`Sorry, I couldn't get traffic advice right now. ${err.message}`, '', 'error');
+    const msg = err.message.includes('Failed to fetch') || err.message.includes('NetworkError')
+      ? `The backend worker isn't reachable yet. DNS for <strong>dublin-traffic-chatbot.gsottana88.workers.dev</strong> is still propagating (can take a few minutes to an hour).<br><br>Try again later, or test the API directly:<br><code>curl https://dublin-traffic-chatbot.gsottana88.workers.dev/api/weather</code>`
+      : `Sorry, I couldn't get traffic advice. ${err.message}`;
+    addMessage(msg, '', 'error');
   } finally {
     elements.send.disabled = false;
     validate();
