@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dublin Traffic Advisor</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <div class="header-content">
+        <div class="logo">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <rect width="32" height="32" rx="8" fill="#3b82f6"/>
+            <path d="M16 6c-5 0-9 4-9 9s4 9 9 9 9-4 9-9-4-9-9-9zm0 16c-3.9 0-7-3.1-7-7s3.1-7 7-7 7 3.1 7 7-3.1 7-7 7z" fill="#fff"/>
+            <path d="M16 10l-1.5 3H12l2 2.5L13 18l3-1.5L19 18l-1-2.5 2-2.5h-2.5z" fill="#fff"/>
+          </svg>
+          <h1>Dublin Traffic Advisor</h1>
+        </div>
+        <span class="badge">DeepSeek V4 Flash</span>
+      </div>
+    </header>
+
+    <main>
+      <div class="input-panel">
+        <div class="input-group">
+          <label for="start">Start Address</label>
+          <div class="input-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+            <input type="text" id="start" placeholder="e.g. Temple Bar, Dublin" autocomplete="off" />
+          </div>
+        </div>
+        <div class="input-group">
+          <label for="finish">Finish Address</label>
+          <div class="input-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+            <input type="text" id="finish" placeholder="e.g. Dun Laoghaire, Dublin" autocomplete="off" />
+          </div>
+        </div>
+        <button id="send-btn" disabled>
+          <span>Get Traffic Advice</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+
+      <div id="chat-container">
+        <div id="messages">
+          <div class="message bot">
+            <div class="avatar">
+              <svg width="20" height="20" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#3b82f6"/><path d="M16 6c-5 0-9 4-9 9s4 9 9 9 9-4 9-9-4-9-9-9zm0 16c-3.9 0-7-3.1-7-7s3.1-7 7-7 7 3.1 7 7-3.1 7-7 7z" fill="#fff"/><path d="M16 10l-1.5 3H12l2 2.5L13 18l3-1.5L19 18l-1-2.5 2-2.5h-2.5z" fill="#fff"/></svg>
+            </div>
+            <div class="bubble">
+              <p>Hello! I'm your Dublin traffic advisor. Enter your start and finish addresses and I'll give you the best advice on road conditions, public transport, and weather impact.</p>
+            </div>
+          </div>
+        </div>
+        <div id="typing" class="hidden">
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <p>Data from OpenWeatherMap, NTA Transport, OpenStreetMap &middot; Powered by DeepSeek V4 Flash</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
